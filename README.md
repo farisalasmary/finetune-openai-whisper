@@ -405,18 +405,34 @@ The PyTorch Lightning `.ckpt` format wraps model weights with training metadata.
 python -m finetune_openai_whisper.convert_ckpt_to_official_whisper_format \
     turbo \
     logs/checkpoint/your_checkpoint.ckpt \
-    whisper_finetuned.pt
+    whisper_turbo_finetuned.pt
 ```
 
 After conversion, load as a standard Whisper model:
 
 ```python
 import whisper
-model = whisper.load_model("whisper_finetuned.pt")
+model = whisper.load_model("whisper_turbo_finetuned.pt")
 result = model.transcribe("audio.wav")
 print(result["text"])
 ```
 
+If you finetuned the model with untied weights, load the checkpoint as follows:
+```python
+import torch
+import whisper
+from finetune_openai_whisper.helpers import untie_embed_n_output_weights
+
+model = whisper.load_model('turbo')
+untie_embed_n_output_weights(model)
+
+finetuned_model_path = 'whisper_turbo_finetuned.pt'
+state_dict = torch.load(finetuned_model_path)['model_state_dict']
+model.load_state_dict(state_dict)
+
+result = model.transcribe("audio.wav")
+print(result["text"])
+```
 ---
 
 ## Converting to Hugging Face Format
@@ -425,6 +441,9 @@ To use your fine-tuned model with the 🤗 Transformers library:
 
 1. First convert to the official Whisper format as described above.
 2. Then use the [Whisper checkpoint converter](https://github.com/huggingface/transformers/blob/main/src/transformers/models/whisper/convert_openai_to_hf.py) provided by Hugging Face Transformers:
+
+> **Note:** This script works only on finetuned models **with** tied weights only.
+
 
 ```bash
 python convert_openai_to_hf.py \

@@ -25,7 +25,7 @@ Typical usage
 """
 
 import types
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 import torch.nn as nn
@@ -153,7 +153,7 @@ def prepare_trainer_from_config(cfg: Config):
     return trainer, model, train_dataloader, val_dataloader
 
 
-def untie_embed_n_output_weights(model: WhisperModelModule, add_bias: bool = False) -> None:
+def untie_embed_n_output_weights(model: Union[WhisperModelModule, "whisper.Whisper"], add_bias: bool = False) -> None:
     """
     Decouple the decoder's output projection from its token embedding weights.
 
@@ -170,9 +170,14 @@ def untie_embed_n_output_weights(model: WhisperModelModule, add_bias: bool = Fal
     Can also be called manually before trainer.fit() for full control.
 
     Args:
-        model:    WhisperModelModule instance. Must be called before trainer.fit().
+        model:    Either a WhisperModelModule (PL wrapper) or a raw whisper.Whisper
+                  model. Must be called before trainer.fit().
         add_bias: If True, adds a trainable bias term to the new lm_head layer.
     """
+    # Support both the PL wrapper (model.model is the Whisper instance)
+    # and a raw whisper.Whisper model passed directly.
+    whisper_model = model.model if isinstance(model, WhisperModelModule) else model
+
     def _forward(self, x: torch.Tensor, xa: torch.Tensor, kv_cache: Optional[dict] = None):
         """
         Decoder forward pass using the decoupled lm_head projection.
@@ -195,13 +200,13 @@ def untie_embed_n_output_weights(model: WhisperModelModule, add_bias: bool = Fal
         x = self.ln(x)
         return self.lm_head(x)   # decoupled projection instead of token_embedding.weight
 
-    vocab_size, d_model = model.model.decoder.token_embedding.weight.shape
+    vocab_size, d_model = whisper_model.decoder.token_embedding.weight.shape
     lm_head = nn.Linear(d_model, vocab_size, bias=add_bias)
 
     # Initialise from the current embedding weights so the model starts from
     # the same point as the original tied-weight configuration.
     with torch.no_grad():
-        lm_head.weight.copy_(model.model.decoder.token_embedding.weight)
+        lm_head.weight.copy_(whisper_model.decoder.token_embedding.weight)
 
-    model.model.decoder.lm_head = lm_head
-    model.model.decoder.forward = types.MethodType(_forward, model.model.decoder)
+    whisper_model.decoder.lm_head = lm_head
+    whisper_model.decoder.forward = types.MethodType(_forward, whisper_model.decoder)
