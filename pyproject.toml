@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "finetune-openai-whisper"
+version = "0.1.0"
+description = "A complete pipeline for fine-tuning OpenAI's Whisper ASR model using PyTorch Lightning"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Faris Alasmary", email = "farisalasmary@gmail.com" }]
+requires-python = ">=3.8"
+dependencies = [
+    "openai-whisper",
+    "pytorch-lightning>=2.0",
+    "torch>=2.0",
+    "librosa",
+    "pandas",
+    "numpy",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+
+[project.urls]
+Homepage = "https://github.com/farisalasmary/finetune-openai-whisper"
+"Bug Tracker" = "https://github.com/farisalasmary/finetune-openai-whisper/issues"
+Source = "https://github.com/farisalasmary/finetune-openai-whisper"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["finetune_openai_whisper*"]

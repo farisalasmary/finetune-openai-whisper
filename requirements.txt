@@ -1,0 +1,6 @@
+openai-whisper
+pytorch-lightning>=2.0
+torch>=2.0
+librosa
+pandas
+numpy
