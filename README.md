@@ -442,7 +442,7 @@ To use your fine-tuned model with the 🤗 Transformers library:
 1. First convert to the official Whisper format as described above.
 2. Then use the [Whisper checkpoint converter](https://github.com/huggingface/transformers/blob/main/src/transformers/models/whisper/convert_openai_to_hf.py) provided by Hugging Face Transformers:
 
-> **Note:** This script works only on finetuned models **with** tied weights only.
+> **Note:** This script works only on finetuned models **with** tied weights.
 
 
 ```bash
