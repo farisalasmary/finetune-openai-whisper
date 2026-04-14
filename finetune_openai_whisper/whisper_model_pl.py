@@ -132,8 +132,8 @@ class WhisperModelModule(LightningModule):
             cer_info = xer.cer(ref_text, hyp_text)
 
             # Per-sample rates for console logging.
-            sample_wer = wer_info['distance'] / wer_info['ref_length'] if wer_info['ref_length'] > 0 else 1.0
-            sample_cer = cer_info['distance'] / cer_info['ref_length'] if cer_info['ref_length'] > 0 else 1.0
+            sample_wer = wer_info['distance'] / wer_info['ref_length']
+            sample_cer = cer_info['distance'] / cer_info['ref_length']
 
             total_wer_distance   += wer_info['distance']
             total_wer_ref_length += wer_info['ref_length']
@@ -146,8 +146,8 @@ class WhisperModelModule(LightningModule):
             print('CER:', sample_cer)
             print('-' * 89)
 
-        total_wer = total_wer_distance / total_wer_ref_length if total_wer_ref_length > 0 else 1.0
-        total_cer = total_cer_distance / total_cer_ref_length if total_cer_ref_length > 0 else 1.0
+        total_wer = total_wer_distance / total_wer_ref_length
+        total_cer = total_cer_distance / total_cer_ref_length
 
         print('Total WER:', total_wer)
         print('Total CER:', total_cer)

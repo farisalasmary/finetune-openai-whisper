@@ -136,7 +136,7 @@ def cer(ref: str, hyp: str) -> dict:
         'substitutions': info['sub'],
         'distance':      info['total'],
         'ref_length':    float(len(ref_chars)),
-        'Error Rate':    (info['total'] / len(ref_chars)) * 100 if ref_chars else 0.0,
+        'Error Rate':    (info['total'] / len(ref_chars)) * 100,
     }
 
 
@@ -178,5 +178,5 @@ def wer(ref: str, hyp: str) -> dict:
         'substitutions': info['sub'],
         'distance':      info['total'],
         'ref_length':    float(len(ref_words)),
-        'Error Rate':    (info['total'] / len(ref_words)) * 100 if ref_words else 0.0,
+        'Error Rate':    (info['total'] / len(ref_words)) * 100,
     }
