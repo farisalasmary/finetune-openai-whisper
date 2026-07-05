@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "finetune-openai-whisper"
-version = "0.1.0"
+version = "0.1.1"
 description = "A complete pipeline for fine-tuning OpenAI's Whisper ASR model using PyTorch Lightning"
 readme = "README.md"
 license = { file = "LICENSE" }

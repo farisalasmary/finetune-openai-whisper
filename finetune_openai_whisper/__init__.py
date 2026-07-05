@@ -21,15 +21,15 @@ Quickstart
 
 from finetune_openai_whisper.config import Config
 from finetune_openai_whisper.whisper_model_pl import WhisperModelModule
-from finetune_openai_whisper.whisper_dataset import WhisperDataset, WhisperDataCollatorWhithPadding
+from finetune_openai_whisper.whisper_dataset import WhisperDataset, WhisperDataCollatorWithPadding
 from finetune_openai_whisper import xer
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "Config",
     "WhisperModelModule",
     "WhisperDataset",
-    "WhisperDataCollatorWhithPadding",
+    "WhisperDataCollatorWithPadding",
     "xer",
 ]

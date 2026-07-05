@@ -35,7 +35,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from finetune_openai_whisper.config import Config
 from finetune_openai_whisper.whisper_model_pl import WhisperModelModule
-from finetune_openai_whisper.whisper_dataset import WhisperDataset, WhisperDataCollatorWhithPadding
+from finetune_openai_whisper.whisper_dataset import WhisperDataset, WhisperDataCollatorWithPadding
 
 
 def prepare_trainer_from_config(cfg: Config):
@@ -62,7 +62,7 @@ def prepare_trainer_from_config(cfg: Config):
     pl.seed_everything(cfg.seed, workers=True)
 
     # ── Model ──────────────────────────────────────────────────────────────────
-    model = WhisperModelModule(cfg, cfg.model_name, cfg.lang)
+    model = WhisperModelModule(cfg, cfg.model_name, cfg.lang, cfg.task)
 
     # Whisper's alignment_heads buffer is a sparse tensor, which is incompatible
     # with PyTorch DDP. Convert it to dense before training begins.
@@ -99,7 +99,7 @@ def prepare_trainer_from_config(cfg: Config):
     )
 
     # ── Data loaders ───────────────────────────────────────────────────────────
-    collator = WhisperDataCollatorWhithPadding(ignored_tokens)
+    collator = WhisperDataCollatorWithPadding(ignored_tokens)
 
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,

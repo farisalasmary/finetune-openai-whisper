@@ -144,7 +144,7 @@ def apply_freezing(
 
 # ── Audio & disk helpers ───────────────────────────────────────────────────────
 
-def check_disk_space(threshold_gb: float) -> bool:
+def check_disk_space(threshold_gb: float, target_folder: str = '.') -> bool:
     """
     Return True if free disk space on the current drive exceeds the threshold.
 
@@ -152,12 +152,13 @@ def check_disk_space(threshold_gb: float) -> bool:
     skipped silently so training is never interrupted by a disk-full error.
 
     Args:
-        threshold_gb: Minimum required free space in gigabytes.
+        threshold_gb:  Minimum required free space in gigabytes.
+        target_folder: The folder whose disk space is checked.
 
     Returns:
         True if free space > threshold_gb, False otherwise.
     """
-    _, _, free = shutil.disk_usage('.')
+    _, _, free = shutil.disk_usage(target_folder)
     return (free / (1024 ** 3)) > threshold_gb
 
 

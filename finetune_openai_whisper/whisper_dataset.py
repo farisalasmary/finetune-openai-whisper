@@ -4,9 +4,8 @@ Dataset classes for loading and preprocessing audio-text pairs for Whisper fine-
 WhisperDataset handles audio loading, mel-spectrogram computation, optional
 on-disk caching, duration filtering, and tokenization.
 
-WhisperDataCollatorWhithPadding (name kept for backward compatibility) collates
-individual samples into padded batches and masks special-token positions so
-they don't contribute to the training loss.
+WhisperDataCollatorWithPadding collates individual samples into padded batches
+and masks special-token positions so they don't contribute to the training loss.
 """
 
 import os
@@ -105,7 +104,7 @@ class WhisperDataset(Dataset):
             audio_signal = whisper.pad_or_trim(audio_signal)
             mel          = whisper.log_mel_spectrogram(audio_signal, n_mels=self.n_mels)
 
-            if cache_path and check_disk_space(self.storage_threshold_gb):
+            if cache_path and check_disk_space(self.storage_threshold_gb, self.tmp_folder):
                 torch.save(mel, cache_path)
 
         # ── Tokenization ──────────────────────────────────────────────────
@@ -123,7 +122,7 @@ class WhisperDataset(Dataset):
         }
 
 
-class WhisperDataCollatorWhithPadding:
+class WhisperDataCollatorWithPadding:
     """
     Collator that pads variable-length token sequences into fixed-size batches.
 

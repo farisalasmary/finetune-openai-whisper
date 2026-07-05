@@ -33,22 +33,36 @@ class WhisperModelModule(LightningModule):
     See Config for the full description of each freezing option.
     """
 
-    def __init__(self, cfg, model_name: str = "turbo", lang: str = "ar") -> None:
+    def __init__(self, cfg, model_name: str = "turbo", lang: str = "ar", task: str = "transcribe") -> None:
         super().__init__()
 
-        self.options = whisper.DecodingOptions(
-            language=lang,
-            without_timestamps=True,
-            task='transcribe',
-        )
+        # Decoding parameters. The fp16 flag is intentionally NOT fixed here:
+        # it is resolved per-device in validation_step (fp16 only on CUDA),
+        # because the module is still on CPU at construction time and Whisper's
+        # fp16 decode path is unimplemented for several ops on CPU.
+        #
+        # task is 'transcribe' (audio → same-language text) or 'translate'
+        # (audio → English text); it selects the task token in the decoder's
+        # SOT prefix and the decoding options used at validation time.
+        self.lang = lang
+        self.task = task
 
         self.model = whisper.load_model(model_name)
+
+        # Whisper's translate task (audio → English) is only defined for the
+        # multilingual checkpoints; the *.en models have no language/task tokens.
+        if self.task == "translate" and not self.model.is_multilingual:
+            raise ValueError(
+                f"task='translate' requires a multilingual model, but '{model_name}' "
+                "is English-only. Use a multilingual checkpoint such as 'small', "
+                "'medium', 'large-v3', or 'turbo'."
+            )
 
         self.tokenizer = whisper.tokenizer.get_tokenizer(
             self.model.is_multilingual,
             num_languages=self.model.num_languages,
             language=lang,
-            task=self.options.task,
+            task=self.task,
         )
 
         self.model.train()
@@ -110,9 +124,21 @@ class WhisperModelModule(LightningModule):
         out = self.model.decoder(dec_input_ids, audio_features)
         loss = self.loss_fn(out.view(-1, out.size(-1)), labels.view(-1))
 
+        # Whisper's fp16 decode path casts the mel to half precision, which is
+        # unimplemented for several ops on CPU and mismatches the fp32 model
+        # weights there. Mirror whisper.transcribe()'s own behaviour: use fp16
+        # only on CUDA, and fall back to fp32 everywhere else.
+        decode_options = whisper.DecodingOptions(
+            language=self.lang,
+            task=self.task,
+            without_timestamps=True,
+            fp16=(self.device.type == "cuda"),
+        )
+        with torch.no_grad():
+            decoded_texts = self.model.decode(mel_spects, options=decode_options)
+            hyp_texts = [t.text for t in decoded_texts]
         # Replace padding markers with the end-of-transcript token so the
         # tokenizer can decode predictions and references cleanly.
-        out[out == -100]       = self.tokenizer.eot
         labels[labels == -100] = self.tokenizer.eot
 
         # Accumulate edit-distance numerators and denominators separately so
@@ -122,11 +148,8 @@ class WhisperModelModule(LightningModule):
         total_cer_distance   = 0
         total_cer_ref_length = 0
 
-        for o, l in zip(out, labels):
-            o = torch.argmax(o, dim=1)
-
-            hyp_text = remove_special_tokens(self.tokenizer.decode(o))
-            ref_text = remove_special_tokens(self.tokenizer.decode(l))
+        for hyp_text, ref_input_ids in zip(hyp_texts, labels):
+            ref_text = remove_special_tokens(self.tokenizer.decode(ref_input_ids))
 
             wer_info = xer.wer(ref_text, hyp_text)
             cer_info = xer.cer(ref_text, hyp_text)

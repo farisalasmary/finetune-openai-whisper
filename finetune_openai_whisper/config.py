@@ -7,7 +7,7 @@ to start training.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 
 @dataclass
@@ -18,7 +18,22 @@ class Config:
     """Whisper variant: tiny | base | small | medium | large | large-v2 | large-v3 | turbo."""
 
     lang: str = "ar"
-    """Target language code, e.g. 'ar' for Arabic, 'en' for English."""
+    """
+    Language code, e.g. 'ar' for Arabic, 'en' for English. Under task='transcribe'
+    this is the transcription language; under task='translate' it is the source
+    audio language (the output is always English).
+    """
+
+    task: str = "transcribe"
+    """
+    Whisper task:
+      - 'transcribe' → audio to text in the same language (`lang`).
+      - 'translate'  → audio to English text. `lang` is the source audio language,
+                       and each training example's `text` must be its English
+                       translation.
+
+    Translation requires a multilingual model (the *.en variants do not support it).
+    """
 
     # ── Encoder freezing ───────────────────────────────────────────────────────
     # Encoder layout: conv1 → conv2 → blocks[0..N-1] → ln_post
@@ -124,8 +139,16 @@ class Config:
     """
 
     # ── Training loop ──────────────────────────────────────────────────────────
-    num_train_epochs: int = 200
+    num_train_epochs: int = 10
     """Maximum number of training epochs."""
+
+    train_dataset_len: int = 0
+    """
+    Number of training samples, used to compute the LR scheduler's total number
+    of steps in WhisperModelModule.setup(). Auto-populated by
+    prepare_trainer_from_config() from len(train_dataset) before trainer.fit();
+    you normally do not set this manually.
+    """
 
     seed: int = 1415
     """Global random seed for reproducibility."""
@@ -150,10 +173,13 @@ class Config:
     Other options: 'gpu', 'cpu', 'tpu'.
     """
 
-    precision: int = 16
+    precision: Union[int, str] = 16
     """
     Training precision. 16 uses 16-bit mixed precision (recommended for speed
     and memory). Other options: 32 for full precision, 'bf16-mixed' on Ampere+ GPUs.
+
+    Accepts both ints (16, 32) and strings ('bf16-mixed', '16-mixed', ...); the
+    value is passed straight through to pytorch_lightning.Trainer(precision=...).
     """
 
     # ── Logging ────────────────────────────────────────────────────────────────
@@ -186,3 +212,10 @@ class Config:
 
     save_top_k: int = 5
     """Number of best checkpoints to keep on disk."""
+
+    def __post_init__(self):
+        valid_tasks = {"transcribe", "translate"}
+        if self.task not in valid_tasks:
+            raise ValueError(
+                f"task must be one of {sorted(valid_tasks)}, got {self.task!r}."
+            )

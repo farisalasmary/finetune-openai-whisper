@@ -4,11 +4,9 @@ Word Error Rate (WER) and Character Error Rate (CER) computation.
 Both metrics are based on Levenshtein edit distance and follow the
 standard ASR evaluation convention: lower is better, 0 = perfect match.
 
-The edit-distance implementation is pure Python (no external C extension),
-so this module has no extra dependencies beyond NumPy.
+The edit-distance implementation is pure Python (no external C extension).
 """
 
-import numpy as np
 from typing import List, Tuple, Union
 
 
